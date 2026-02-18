@@ -1,5 +1,5 @@
 {
-    "name": "obsidian-directed-graph",
+    "name": "graphsidian",
     "version": "0.1.0",
     "description": "Obsidian plugin for directed, labeled relationships between notes",
     "main": "main.js",
