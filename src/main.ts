@@ -64,6 +64,28 @@ export default class DirectedGraphPlugin extends Plugin {
             await this.performFullScan();
             this.registerVaultEvents();
         });
+
+        // Register editor change listener for autocomplete
+        this.registerEvent(
+            this.app.workspace.on('editor-change', (editor) => {
+                const cursor = editor.getCursor();
+                const line = editor.getLine(cursor.line);
+                const prefix = line.slice(0, cursor.ch);
+
+                // Check for >[[ pattern, but not ->[[  (avoid re-trigger)
+                if (prefix.endsWith('>[[') && !prefix.endsWith('->[[')) {
+                    // Replace >[[ with <-->[[  (Obsidian auto-pairs the closing ]])
+                    const from = { line: cursor.line, ch: cursor.ch - 3 };
+                    const to = cursor;
+                    editor.replaceRange('<-->[[', from, to);
+
+                    // Move cursor to end: <-->[[ |
+                    // Inserted 6 chars (<-->[[), cursor at from + 6
+                    const newCursor = { line: cursor.line, ch: from.ch + 6 };
+                    editor.setCursor(newCursor);
+                }
+            })
+        );
     }
 
     onunload(): void {
@@ -211,7 +233,7 @@ export default class DirectedGraphPlugin extends Plugin {
 
         for (const textNode of textNodes) {
             const text = textNode.textContent || '';
-            const regex = /<<([^>]*?)>>\[\[\s*(.*?)\s*\]\]/g;
+            const regex = /<([+\-][^>]*?[+\-])>\s*\[\[\s*(.*?)\s*\]\]/g;
             let match: RegExpExecArray | null;
             const fragments: (string | HTMLElement)[] = [];
             let lastIndex = 0;

@@ -1,0 +1,62 @@
+/* Graphsidian Plugin Styles */
+
+.dg-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background-color: var(--background-secondary-alt);
+    border: 1px solid var(--background-modifier-border);
+    margin: 0 4px;
+    font-size: 0.9em;
+    vertical-align: middle;
+}
+
+.dg-badge-arrow {
+    margin-right: 4px;
+    color: var(--text-accent);
+    font-weight: bold;
+}
+
+.dg-badge-label {
+    margin-right: 4px;
+    color: var(--text-muted);
+}
+
+.dg-badge-target {
+    color: var(--text-normal);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.dg-badge-target:hover {
+    text-decoration: underline;
+    color: var(--text-accent-hover);
+}
+
+/* Graph View Styles */
+
+.dg-node-label {
+    fill: var(--text-normal);
+    font-size: 12px;
+    /* Adaptive background using stroke */
+    paint-order: stroke;
+    stroke: var(--background-primary);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+    pointer-events: none;
+}
+
+.dg-link-label {
+    fill: var(--text-muted);
+    font-size: 11px;
+    /* Adaptive background using stroke */
+    paint-order: stroke;
+    stroke: var(--background-primary);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+}
+
+.dg-svg {
+    background-color: var(--background-primary);
+}

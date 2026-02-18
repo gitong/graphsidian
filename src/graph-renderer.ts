@@ -25,7 +25,6 @@ export class GraphRenderer {
     private svg!: d3.Selection<SVGSVGElement, unknown, null, undefined>;
     private g!: d3.Selection<SVGGElement, unknown, null, undefined>;
     private simulation!: d3.Simulation<GraphNode, GraphLink>;
-    private tooltip!: d3.Selection<HTMLDivElement, unknown, null, undefined>;
 
     private nodes: GraphNode[] = [];
     private links: GraphLink[] = [];
@@ -51,13 +50,6 @@ export class GraphRenderer {
     }
 
     private initSvg(): void {
-        // Tooltip
-        this.tooltip = d3
-            .select(this.container)
-            .append('div')
-            .attr('class', 'dg-tooltip')
-            .style('opacity', '0');
-
         // SVG
         this.svg = d3
             .select(this.container)
@@ -154,9 +146,9 @@ export class GraphRenderer {
                 d3
                     .forceLink<GraphNode, GraphLink>()
                     .id((d) => d.id)
-                    .distance(150)
+                    .distance(this.settings.linkDistance)
             )
-            .force('charge', d3.forceManyBody().strength(-300))
+            .force('charge', d3.forceManyBody().strength(-this.settings.nodeRepulsion))
             .force('center', d3.forceCenter(this.width / 2, this.height / 2))
             .force('collision', d3.forceCollide().radius(40));
     }
@@ -238,14 +230,10 @@ export class GraphRenderer {
             .attr('fill', 'none')
             .attr('stroke', (d) => this.getEdgeColor(d.relationship))
             .attr('stroke-width', 2)
-            .attr('stroke-dasharray', (d) =>
-                d.relationship.direction === 'undirected' ? '6,4' : 'none'
-            )
+            .attr('stroke-dasharray', 'none')
             .attr('marker-end', (d) => this.getMarkerEnd(d.relationship))
             .attr('marker-start', (d) => this.getMarkerStart(d.relationship))
             .style('cursor', 'pointer')
-            .on('mouseover', (event, d) => this.showTooltip(event, d.relationship))
-            .on('mouseout', () => this.hideTooltip())
             .on('click', (_event, d) => {
                 this.onNavigate(d.relationship.sourceFile, d.relationship.line);
             });
@@ -386,27 +374,6 @@ export class GraphRenderer {
         }
     }
 
-    private showTooltip(event: MouseEvent, r: Relationship): void {
-        const from =
-            r.direction === 'incoming' ? r.targetFile : r.sourceFile;
-        const to =
-            r.direction === 'incoming' ? r.sourceFile : r.targetFile;
-
-        this.tooltip
-            .html(
-                `<strong>From:</strong> ${from}<br>` +
-                `<strong>To:</strong> ${to}<br>` +
-                (r.label ? `<strong>Label:</strong> ${r.label}<br>` : '') +
-                `<strong>Defined in:</strong> ${r.sourceFile}.md`
-            )
-            .style('left', `${event.offsetX + 10}px`)
-            .style('top', `${event.offsetY - 10}px`)
-            .style('opacity', '1');
-    }
-
-    private hideTooltip(): void {
-        this.tooltip.style('opacity', '0');
-    }
 
     private dragBehavior(): d3.DragBehavior<Element, GraphNode, GraphNode> {
         return d3
@@ -459,6 +426,5 @@ export class GraphRenderer {
         }
         this.simulation.stop();
         this.svg.remove();
-        this.tooltip.remove();
     }
 }

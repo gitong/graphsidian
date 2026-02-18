@@ -1,12 +1,13 @@
 import { Relationship } from './types';
 
 /**
- * Regex to match the relationship syntax: <<descriptor>>[[target]]
+ * Regex to match the relationship syntax: <descriptor>[[target]]
+ * The descriptor must start and end with - or +.
  * Captures:
- *   group 1 = descriptor (text between << and >>)
+ *   group 1 = descriptor (content between < and >, e.g. "-+", "+-", "-text-")
  *   group 2 = target name (text between [[ and ]], trimmed)
  */
-const RELATIONSHIP_REGEX = /<<([^>]*?)>>\[\[\s*(.*?)\s*\]\]/g;
+const RELATIONSHIP_REGEX = /<([+\-][^>]*?[+\-])>\s*\[\[\s*(.*?)\s*\]\]/g;
 
 /**
  * Generate a simple unique ID for a relationship.
@@ -16,88 +17,47 @@ function generateId(sourceFile: string, line: number, index: number): string {
 }
 
 /**
- * Parse a descriptor string (the text between << and >>) to determine
- * direction and label.
+ * Parse a descriptor string to determine direction and label.
  *
- * Rules:
- *   "-+"           → outgoing, no label
- *   "+-"           → incoming, no label
- *   "++"           → bidirectional, no label
- *   "+text+"       → bidirectional, label = text
- *   "+text"        → incoming, label = text
- *   "text+"        → outgoing, label = text
- *   "text"         → undirected, label = text
- *   empty / "-" only / other invalid → null (skip)
+ * The first and last characters determine direction:
+ *   first=-  last=+ → outgoing     (e.g. "-+" or "-text+")
+ *   first=+  last=- → incoming     (e.g. "+-" or "+text-")
+ *   first=+  last=+ → bidirectional (e.g. "++" or "+text+")
+ *   first=-  last=- → undirected   (e.g. "--" or "-text-")
+ *
+ * The label is the text between the first and last characters (trimmed).
+ * If there is no text between them (length == 2), label is null.
  */
 function parseDescriptor(
     descriptor: string
 ): { direction: Relationship['direction']; label: string | null } | null {
-    // Trim whitespace
     const d = descriptor.trim();
 
-    // Empty descriptor is malformed
-    if (d.length === 0) {
+    // Must have at least 2 chars (leading boundary + trailing boundary)
+    if (d.length < 2) {
         return null;
     }
 
-    // Exact arrow tokens (no label)
-    if (d === '-+') {
-        return { direction: 'outgoing', label: null };
-    }
-    if (d === '+-') {
-        return { direction: 'incoming', label: null };
-    }
-    if (d === '++') {
-        return { direction: 'bidirectional', label: null };
+    const first = d[0];
+    const last = d[d.length - 1];
+
+    // Must start and end with - or +
+    if ((first !== '-' && first !== '+') || (last !== '-' && last !== '+')) {
+        return null;
     }
 
-    // Check for descriptors that are only dashes/plusses but don't match above
-    // e.g. "-", "--", "---", etc. → malformed
-    if (/^[-+]+$/.test(d) && d !== '-+' && d !== '+-' && d !== '++') {
-        // Check if it could be a label with + prefix/suffix
-        // "++" is already handled, so remaining pure symbol combos are invalid
-        // unless they match +label+ / +label / label+ patterns below
-        // Only pure - combinations are invalid
-        if (/^-+$/.test(d)) {
-            return null;
-        }
-    }
+    // Determine direction from boundary characters
+    let direction: Relationship['direction'];
+    if (first === '-' && last === '+') direction = 'outgoing';
+    else if (first === '+' && last === '-') direction = 'incoming';
+    else if (first === '+' && last === '+') direction = 'bidirectional';
+    else direction = 'undirected'; // first === '-' && last === '-'
 
-    // Bidirectional with label: +label+
-    if (d.startsWith('+') && d.endsWith('+') && d.length > 2) {
-        const label = d.slice(1, -1).trim();
-        if (label.length === 0) {
-            return null;
-        }
-        return { direction: 'bidirectional', label };
-    }
+    // Extract label (text between boundary chars)
+    const labelText = d.length > 2 ? d.slice(1, -1).trim() : null;
+    const label = labelText && labelText.length > 0 ? labelText : null;
 
-    // Incoming with label: +label (starts with + but doesn't end with +)
-    if (d.startsWith('+') && !d.endsWith('+')) {
-        const label = d.slice(1).trim();
-        if (label.length === 0) {
-            return null;
-        }
-        return { direction: 'incoming', label };
-    }
-
-    // Outgoing with label: label+ (ends with + but doesn't start with +)
-    if (d.endsWith('+') && !d.startsWith('+')) {
-        const label = d.slice(0, -1).trim();
-        if (label.length === 0) {
-            return null;
-        }
-        return { direction: 'outgoing', label };
-    }
-
-    // Undirected with label: just text (no + or - at boundaries)
-    // Must contain at least one letter or digit to be a valid label
-    if (/[a-zA-Z0-9]/.test(d)) {
-        return { direction: 'undirected', label: d };
-    }
-
-    // Anything else is malformed
-    return null;
+    return { direction, label };
 }
 
 /**

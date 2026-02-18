@@ -27,6 +27,8 @@ export interface DirectedGraphSettings {
     incomingColor: string;
     undirectedColor: string;
     bidirectionalColor: string;
+    linkDistance: number;
+    nodeRepulsion: number;
 }
 
 export const DEFAULT_SETTINGS: DirectedGraphSettings = {
@@ -37,6 +39,8 @@ export const DEFAULT_SETTINGS: DirectedGraphSettings = {
     incomingColor: '#FF6347',
     undirectedColor: '#999999',
     bidirectionalColor: '#9B59B6',
+    linkDistance: 150,
+    nodeRepulsion: 300,
 };
 
 export const VIEW_TYPE_DIRECTED_GRAPH = 'directed-graph-view';

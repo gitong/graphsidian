@@ -122,6 +122,39 @@ export class DirectedGraphSettingTab extends PluginSettingTab {
                     })
             );
 
+        // ------- Physics -------
+        containerEl.createEl('h3', { text: 'Graph Physics' });
+
+        new Setting(containerEl)
+            .setName('Link distance')
+            .setDesc('Ideal distance between connected nodes.')
+            .addSlider((slider) =>
+                slider
+                    .setLimits(50, 500, 10)
+                    .setValue(this.plugin.settings.linkDistance)
+                    .setDynamicTooltip()
+                    .onChange(async (value) => {
+                        this.plugin.settings.linkDistance = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.refreshGraphView();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Node repulsion')
+            .setDesc('How strongly nodes push away from each other.')
+            .addSlider((slider) =>
+                slider
+                    .setLimits(0, 1000, 50)
+                    .setValue(this.plugin.settings.nodeRepulsion)
+                    .setDynamicTooltip()
+                    .onChange(async (value) => {
+                        this.plugin.settings.nodeRepulsion = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.refreshGraphView();
+                    })
+            );
+
         // ------- Reset -------
         new Setting(containerEl)
             .setName('Reset to defaults')
