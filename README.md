@@ -1,4 +1,4 @@
-# Graphsidian
+# Typsidan Graph
 
 An Obsidian plugin that adds support for **directed, labeled relationships** between notes and visualizes them in an interactive force-directed graph.
 
